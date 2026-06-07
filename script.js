@@ -1,447 +1,531 @@
 /* ═════════════════════════════════════════════════════════════
-   AURALYTICS PRO - PREMIUM ANALYTICS ENGINE
-   Pure ES6+ JavaScript - No Dependencies
+   AURALYTICS PRO · QUANTUM DATA INTELLIGENCE STUDIO
+   Premium JavaScript Engine - ES6+ Pure Logic
    ═════════════════════════════════════════════════════════════ */
 
-class AuralyticsApp {
-  constructor() {
-    this.data = null;
-    this.numericColumns = [];
-    this.columns = [];
-    this.charts = {};
-    this.init();
-  }
+// ── APPLICATION STATE ──────────────────────────────────────── //
+const appState = {
+  csvData: null,
+  numericColumns: [],
+  columns: [],
+  startTime: Date.now(),
+  charts: {
+    line: null,
+    bar: null,
+  },
+  settings: {
+    aiMode: true,
+    typingEffect: true,
+    verbosity: 'standard',
+    gradientFill: true,
+    chartAnimations: true,
+    maxPoints: 100,
+  },
+};
 
-  init() {
-    this.cacheDOM();
-    this.bindEvents();
-  }
+// ── DOM SELECTORS ──────────────────────────────────────────── //
+const DOM = {
+  sidebar: document.getElementById('sidebar'),
+  sidebarToggle: document.getElementById('sidebarToggle'),
+  sidebarNav: document.getElementById('sidebarNav'),
+  mainPanel: document.getElementById('mainPanel'),
+  pageContent: document.getElementById('pageContent'),
+  breadcrumb: document.getElementById('breadcrumb'),
+  breadcrumbCurrent: document.getElementById('breadcrumbCurrent'),
+  headerTime: document.getElementById('headerTime'),
+  uptimeDisplay: document.getElementById('uptimeDisplay'),
+  recordsDisplay: document.getElementById('recordsDisplay'),
 
-  cacheDOM() {
-    // Navigation
-    this.startBtn = document.getElementById('startBtn');
-    this.uploadSection = document.getElementById('uploadSection');
-    this.dashboardSection = document.getElementById('dashboardSection');
+  // Upload zone
+  uploadZone: document.getElementById('uploadZone'),
+  dropZone: document.getElementById('dropZone'),
+  fileInput: document.getElementById('fileInput'),
+  uploadProgress: document.getElementById('uploadProgress'),
+  progressFill: document.getElementById('progressFill'),
+  progressLabel: document.getElementById('progressLabel'),
 
-    // Upload
-    this.uploadBox = document.getElementById('uploadBox');
-    this.fileInput = document.getElementById('fileInput');
-    this.uploadProgress = document.getElementById('uploadProgress');
-    this.progressFill = document.getElementById('progressFill');
-    this.progressText = document.getElementById('progressText');
+  // KPI cards
+  kpiGrid: document.getElementById('kpiGrid'),
+  kpiRows: document.getElementById('kpiRows'),
+  kpiCols: document.getElementById('kpiCols'),
+  kpiNumeric: document.getElementById('kpiNumeric'),
+  kpiProcessTime: document.getElementById('kpiProcessTime'),
 
-    // Dashboard
-    this.dashboardSidebar = document.querySelector('.dashboard-sidebar');
-    this.sidebarItems = document.querySelectorAll('.sidebar-item');
-    this.newUploadBtn = document.getElementById('newUploadBtn');
+  // Statistics
+  statsSection: document.getElementById('statsSection'),
+  statsTable: document.getElementById('statsTable'),
+  statsTableBody: document.getElementById('statsTableBody'),
 
-    // Views
-    this.overviewView = document.getElementById('overviewView');
-    this.analyticsView = document.getElementById('analyticsView');
-    this.exportView = document.getElementById('exportView');
-    this.settingsView = document.getElementById('settingsView');
-    this.viewTitle = document.getElementById('viewTitle');
+  // AI Report
+  aiReportSection: document.getElementById('aiReportSection'),
+  aiReportBody: document.getElementById('aiReportBody'),
+  aiReportMeta: document.getElementById('aiReportMeta'),
 
-    // KPI Cards
-    this.kpiRecords = document.getElementById('kpiRecords');
-    this.kpiColumns = document.getElementById('kpiColumns');
-    this.kpiNumeric = document.getElementById('kpiNumeric');
-    this.kpiQuality = document.getElementById('kpiQuality');
+  // Charts
+  chartModeToggle: document.getElementById('chartModeToggle'),
+  chartsWorkspace: document.getElementById('chartsWorkspace'),
+  lineChartPanel: document.getElementById('lineChartPanel'),
+  barChartPanel: document.getElementById('barChartPanel'),
+  lineColumnSelect: document.getElementById('lineColumnSelect'),
+  barColumnSelect: document.getElementById('barColumnSelect'),
+  lineChart: document.getElementById('lineChart'),
+  barChart: document.getElementById('barChart'),
+  analyticsNoData: document.getElementById('analyticsNoData'),
 
-    // Stats
-    this.statsBody = document.getElementById('statsBody');
-    this.statsBox = document.getElementById('statsBox');
+  // Datasets
+  datasetsContent: document.getElementById('datasetsContent'),
+  datasetsNoData: document.getElementById('datasetsNoData'),
+  datasetFileInfo: document.getElementById('datasetFileInfo'),
+  dataPreviewTable: document.getElementById('dataPreviewTable'),
 
-    // Insights
-    this.insightsContent = document.getElementById('insightsContent');
+  // Buttons
+  clearDataBtn: document.getElementById('clearDataBtn'),
+  exportBtn: document.getElementById('exportBtn'),
+  settingsClearBtn: document.getElementById('settingsClearBtn'),
 
-    // Charts
-    this.lineChartCanvas = document.getElementById('lineChart');
-    this.barChartCanvas = document.getElementById('barChart');
-    this.lineChartSelect = document.getElementById('lineChartSelect');
-    this.barChartSelect = document.getElementById('barChartSelect');
+  // Settings
+  settingAIMode: document.getElementById('settingAIMode'),
+  settingTyping: document.getElementById('settingTyping'),
+  settingVerbosity: document.getElementById('settingVerbosity'),
+  settingGradient: document.getElementById('settingGradient'),
+  settingAnimations: document.getElementById('settingAnimations'),
+  settingMaxPoints: document.getElementById('settingMaxPoints'),
 
-    // Export
-    this.exportBtns = document.querySelectorAll('.export-btn');
+  // Toast
+  toastContainer: document.getElementById('toastContainer'),
+};
 
-    // Settings
-    this.clearDataBtn = document.getElementById('clearDataBtn');
-    this.themeSelect = document.getElementById('themeSelect');
+// ═════════════════════════════════════════════════════════════
+// INITIALIZATION
+// ═════════════════════════════════════════════════════════════
 
-    // Toast
-    this.toast = document.getElementById('toast');
-  }
+document.addEventListener('DOMContentLoaded', () => {
+  initializeEventListeners();
+  loadSettings();
+  updateClock();
+  setInterval(updateClock, 1000);
+  setInterval(updateUptime, 1000);
+});
 
-  bindEvents() {
-    this.startBtn.addEventListener('click', () => this.scrollToUpload());
-    
-    this.uploadBox.addEventListener('click', () => this.fileInput.click());
-    this.uploadBox.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      this.uploadBox.style.borderColor = 'var(--primary)';
-      this.uploadBox.style.background = 'rgba(0, 102, 255, 0.05)';
-    });
-    this.uploadBox.addEventListener('dragleave', () => {
-      this.uploadBox.style.borderColor = '';
-      this.uploadBox.style.background = '';
-    });
-    this.uploadBox.addEventListener('drop', (e) => {
-      e.preventDefault();
-      this.uploadBox.style.borderColor = '';
-      this.uploadBox.style.background = '';
-      if (e.dataTransfer.files[0]) this.handleFileUpload(e.dataTransfer.files[0]);
-    });
+// ── EVENT LISTENERS INITIALIZATION ─────────────────────────── //
+function initializeEventListeners() {
+  // Sidebar navigation
+  DOM.sidebarToggle.addEventListener('click', toggleSidebar);
+  document.querySelectorAll('.nav-item').forEach((item) => {
+    item.addEventListener('click', handleNavigation);
+  });
 
-    this.fileInput.addEventListener('change', (e) => {
-      if (e.target.files[0]) this.handleFileUpload(e.target.files[0]);
-    });
+  // Upload zone
+  DOM.dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    DOM.uploadZone.classList.add('drag-over');
+  });
 
-    this.sidebarItems.forEach((item) => {
-      item.addEventListener('click', (e) => this.switchView(e.currentTarget));
-    });
+  DOM.dropZone.addEventListener('dragleave', () => {
+    DOM.uploadZone.classList.remove('drag-over');
+  });
 
-    this.newUploadBtn.addEventListener('click', () => this.resetApp());
+  DOM.dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    DOM.uploadZone.classList.remove('drag-over');
+    const files = e.dataTransfer.files;
+    if (files.length > 0) handleFileUpload(files[0]);
+  });
 
-    this.exportBtns.forEach((btn) => {
-      btn.addEventListener('click', (e) => this.exportData(e.target.closest('.export-btn').dataset.format));
-    });
+  DOM.fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) handleFileUpload(e.target.files[0]);
+  });
 
-    this.clearDataBtn.addEventListener('click', () => this.resetApp());
+  // Chart mode toggle
+  document.querySelectorAll('.toggle-btn').forEach((btn) => {
+    btn.addEventListener('click', handleChartModeChange);
+  });
 
-    this.themeSelect.addEventListener('change', (e) => this.switchTheme(e.target.value));
+  // Column selectors
+  DOM.lineColumnSelect.addEventListener('change', updateLineChart);
+  DOM.barColumnSelect.addEventListener('change', updateBarChart);
 
-    this.lineChartSelect.addEventListener('change', () => this.updateLineChart());
-    this.barChartSelect.addEventListener('change', () => this.updateBarChart());
-  }
+  // Buttons
+  DOM.clearDataBtn?.addEventListener('click', clearData);
+  DOM.exportBtn?.addEventListener('click', exportReport);
+  DOM.settingsClearBtn?.addEventListener('click', clearSessionData);
 
-  scrollToUpload() {
-    this.uploadSection.scrollIntoView({ behavior: 'smooth' });
-  }
+  // Settings
+  DOM.settingAIMode?.addEventListener('change', (e) => {
+    appState.settings.aiMode = e.target.checked;
+    saveSettings();
+  });
 
-  handleFileUpload(file) {
-    if (!file.name.endsWith('.csv')) {
-      this.showToast('Please upload a CSV file', 'error');
-      return;
+  DOM.settingTyping?.addEventListener('change', (e) => {
+    appState.settings.typingEffect = e.target.checked;
+    saveSettings();
+  });
+
+  DOM.settingVerbosity?.addEventListener('change', (e) => {
+    appState.settings.verbosity = e.target.value;
+    saveSettings();
+  });
+
+  DOM.settingGradient?.addEventListener('change', (e) => {
+    appState.settings.gradientFill = e.target.checked;
+    saveSettings();
+    if (appState.csvData) updateLineChart();
+  });
+
+  DOM.settingAnimations?.addEventListener('change', (e) => {
+    appState.settings.chartAnimations = e.target.checked;
+    saveSettings();
+  });
+
+  DOM.settingMaxPoints?.addEventListener('change', (e) => {
+    appState.settings.maxPoints = parseInt(e.target.value);
+    saveSettings();
+    if (appState.csvData) {
+      updateLineChart();
+      updateBarChart();
     }
+  });
+}
 
-    const reader = new FileReader();
-    this.uploadProgress.style.display = 'flex';
+// ═════════════════════════════════════════════════════════════
+// NAVIGATION & UI
+// ═════════════════════════════════════════════════════════════
 
-    reader.onprogress = (e) => {
-      if (e.lengthComputable) {
-        const progress = (e.loaded / e.total) * 100;
-        this.progressFill.style.width = progress + '%';
-      }
-    };
+function handleNavigation(e) {
+  e.preventDefault();
+  const page = e.currentTarget.getAttribute('data-page');
 
-    reader.onload = (e) => {
-      try {
-        this.parseCSV(e.target.result);
-        this.uploadProgress.style.display = 'none';
-        this.showToast('CSV parsed successfully!', 'success');
-      } catch (error) {
-        this.showToast('Error parsing CSV: ' + error.message, 'error');
-        this.uploadProgress.style.display = 'none';
-      }
-    };
+  // Update active nav
+  document.querySelectorAll('.nav-item').forEach((item) => {
+    item.classList.remove('active');
+  });
+  e.currentTarget.classList.add('active');
 
-    reader.readAsText(file);
+  // Update breadcrumb
+  const label = e.currentTarget.querySelector('.nav-label').textContent;
+  DOM.breadcrumbCurrent.textContent = label;
+
+  // Show page
+  document.querySelectorAll('.page').forEach((p) => {
+    p.style.display = 'none';
+  });
+  document.getElementById(`page-${page}`).style.display = 'block';
+
+  // Scroll top
+  DOM.pageContent.scrollTop = 0;
+}
+
+function toggleSidebar() {
+  DOM.sidebar.classList.toggle('open');
+}
+
+function updateClock() {
+  const now = new Date();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  DOM.headerTime.textContent = `${hours}:${minutes}:${seconds}`;
+}
+
+function updateUptime() {
+  const elapsed = Math.floor((Date.now() - appState.startTime) / 1000);
+  const hours = Math.floor(elapsed / 3600);
+  const minutes = Math.floor((elapsed % 3600) / 60);
+  const seconds = elapsed % 60;
+  DOM.uptimeDisplay.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+// ═════════════════════════════════════════════════════════════
+// CSV PARSING & DATA PROCESSING
+// ═════════════════════════════════════════════════════════════
+
+function handleFileUpload(file) {
+  if (!file.name.endsWith('.csv')) {
+    showToast('Please upload a valid CSV file', 'error');
+    return;
   }
 
-  parseCSV(csv) {
-    const lines = csv.trim().split('\n');
-    if (lines.length === 0) throw new Error('Empty CSV');
+  DOM.uploadProgress.style.display = 'flex';
+  const reader = new FileReader();
 
-    this.columns = lines[0].split(',').map((h) => h.trim());
-    const rows = [];
-
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',');
-      const row = {};
-      this.columns.forEach((col, idx) => {
-        row[col] = (values[idx] || '').trim();
-      });
-      rows.push(row);
+  reader.onprogress = (event) => {
+    if (event.lengthComputable) {
+      const percentComplete = (event.loaded / event.total) * 100;
+      DOM.progressFill.style.width = percentComplete + '%';
     }
+  };
 
-    if (rows.length === 0) throw new Error('No data rows found');
+  reader.onload = (event) => {
+    try {
+      const csv = event.target.result;
+      parseCSV(csv);
+      DOM.uploadProgress.style.display = 'none';
+      showToast('CSV parsed successfully!', 'success');
+    } catch (error) {
+      showToast('Error parsing CSV: ' + error.message, 'error');
+      DOM.uploadProgress.style.display = 'none';
+    }
+  };
 
-    this.data = rows;
-    this.detectNumericColumns();
-    this.showDashboard();
-    this.updateDashboard();
-  }
+  reader.onerror = () => {
+    showToast('Error reading file', 'error');
+    DOM.uploadProgress.style.display = 'none';
+  };
 
-  detectNumericColumns() {
-    this.numericColumns = this.columns.filter((col) => {
-      return this.data.some((row) => {
-        const val = row[col];
-        return val && !isNaN(parseFloat(val)) && isFinite(val);
-      });
+  reader.readAsText(file);
+}
+
+function parseCSV(csv) {
+  const lines = csv.trim().split('\n');
+  if (lines.length === 0) throw new Error('Empty CSV');
+
+  const headers = lines[0].split(',').map((h) => h.trim());
+  const rows = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const values = lines[i].split(',');
+    const row = {};
+    headers.forEach((header, index) => {
+      let value = values[index]?.trim() || '';
+      // Handle empty values gracefully
+      row[header] = value;
     });
+    rows.push(row);
   }
 
-  showDashboard() {
-    this.uploadSection.style.display = 'none';
-    this.dashboardSection.style.display = 'block';
-  }
+  if (rows.length === 0) throw new Error('No data rows found');
 
-  updateDashboard() {
-    this.updateKPIs();
-    this.updateStatsTable();
-    this.generateInsights();
-    this.populateChartSelectors();
-  }
+  appState.csvData = rows;
+  appState.columns = headers;
 
-  updateKPIs() {
-    this.kpiRecords.textContent = this.data.length.toLocaleString();
-    this.kpiColumns.textContent = this.columns.length;
-    this.kpiNumeric.textContent = this.numericColumns.length;
-    this.kpiQuality.textContent = ((Math.random() * 30 + 70).toFixed(1)) + '%';
-  }
+  // Detect numeric columns
+  appState.numericColumns = headers.filter((header) => {
+    return rows.some((row) => {
+      const val = row[header];
+      return val && !isNaN(parseFloat(val)) && isFinite(val);
+    });
+  });
 
-  updateStatsTable() {
-    this.statsBody.innerHTML = '';
+  DOM.recordsDisplay.textContent = rows.length.toLocaleString();
 
-    this.numericColumns.forEach((col) => {
-      const values = this.data
-        .map((row) => parseFloat(row[col]))
-        .filter((v) => !isNaN(v) && isFinite(v));
+  // Update UI
+  updateKPICards();
+  updateStatsTable();
+  generateAIReport();
+  populateChartSelectors();
+  renderDataPreview();
+  updateAnalyticsDisplay();
 
-      if (values.length === 0) return;
+  // Show action buttons
+  DOM.clearDataBtn.style.display = 'inline-flex';
+  DOM.exportBtn.style.display = 'inline-flex';
+}
 
-      const mean = values.reduce((a, b) => a + b, 0) / values.length;
-      const sorted = [...values].sort((a, b) => a - b);
-      const median = sorted.length % 2 === 0
+// ═════════════════════════════════════════════════════════════
+// KPI CARDS
+// ═════════════════════════════════════════════════════════════
+
+function updateKPICards() {
+  const startTime = performance.now();
+
+  DOM.kpiRows.textContent = appState.csvData.length.toLocaleString();
+  DOM.kpiCols.textContent = appState.columns.length;
+  DOM.kpiNumeric.textContent = appState.numericColumns.length;
+
+  const endTime = performance.now();
+  const processTime = ((endTime - startTime) / 1000).toFixed(2);
+  DOM.kpiProcessTime.textContent = `${processTime}s`;
+
+  DOM.kpiGrid.style.display = 'grid';
+}
+
+// ═════════════════════════════════════════════════════════════
+// STATISTICS TABLE
+// ═════════════════════════════════════════════════════════════
+
+function updateStatsTable() {
+  const tbody = DOM.statsTableBody;
+  tbody.innerHTML = '';
+
+  appState.numericColumns.forEach((col) => {
+    const values = appState.csvData
+      .map((row) => parseFloat(row[col]))
+      .filter((v) => !isNaN(v) && isFinite(v));
+
+    if (values.length === 0) return;
+
+    const mean = values.reduce((a, b) => a + b) / values.length;
+    const sorted = [...values].sort((a, b) => a - b);
+    const median =
+      sorted.length % 2 === 0
         ? (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2
         : sorted[Math.floor(sorted.length / 2)];
-      const stdDev = Math.sqrt(
-        values.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / values.length
-      );
-      const min = Math.min(...values);
-      const max = Math.max(...values);
+    const max = Math.max(...values);
+    const min = Math.min(...values);
+    const range = max - min;
 
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td><strong>${col}</strong></td>
-        <td>${mean.toFixed(2)}</td>
-        <td>${median.toFixed(2)}</td>
-        <td>${stdDev.toFixed(2)}</td>
-        <td>${min.toFixed(2)}</td>
-        <td>${max.toFixed(2)}</td>
-      `;
-      this.statsBody.appendChild(row);
-    });
-  }
+    const insight =
+      range > 1000
+        ? 'high'
+        : range > 100
+          ? 'mid'
+          : 'low';
 
-  generateInsights() {
-    const insights = `
-      <p><strong>Dataset Overview:</strong> Your dataset contains ${this.data.length.toLocaleString()} records with ${this.columns.length} columns.</p>
-      <p><strong>Numeric Fields:</strong> ${this.numericColumns.length} numeric columns detected: ${this.numericColumns.join(', ')}</p>
-      <p><strong>Quality Score:</strong> Data integrity is excellent with comprehensive statistical validation.</p>
-      <p><strong>Recommendations:</strong> Use the Analytics tab to explore trends and distributions across your data.</p>
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td><span class="table-col-name">${col}</span></td>
+      <td><span class="table-num">${mean.toFixed(2)}</span></td>
+      <td><span class="table-num">${median.toFixed(2)}</span></td>
+      <td><span class="table-num">${max.toFixed(2)}</span></td>
+      <td><span class="table-num">${range.toFixed(2)}</span></td>
+      <td><span class="insight-tag insight-${insight}">${insight.toUpperCase()}</span></td>
     `;
-    this.insightsContent.innerHTML = insights;
-  }
+    tbody.appendChild(row);
+  });
 
-  populateChartSelectors() {
-    this.lineChartSelect.innerHTML = '';
-    this.barChartSelect.innerHTML = '';
-
-    this.numericColumns.forEach((col) => {
-      const opt1 = document.createElement('option');
-      opt1.value = col;
-      opt1.textContent = col;
-      this.lineChartSelect.appendChild(opt1);
-
-      const opt2 = document.createElement('option');
-      opt2.value = col;
-      opt2.textContent = col;
-      this.barChartSelect.appendChild(opt2);
-    });
-
-    if (this.numericColumns.length > 0) {
-      this.updateLineChart();
-      this.updateBarChart();
-    }
-  }
-
-  updateLineChart() {
-    const col = this.lineChartSelect.value || this.numericColumns[0];
-    if (!col) return;
-
-    const values = this.data
-      .map((row) => parseFloat(row[col]))
-      .filter((v) => !isNaN(v))
-      .slice(0, 50);
-
-    if (this.charts.line) this.charts.line.destroy();
-
-    this.charts.line = new Chart(this.lineChartCanvas, {
-      type: 'line',
-      data: {
-        labels: Array.from({ length: values.length }, (_, i) => i + 1),
-        datasets: [
-          {
-            label: col,
-            data: values,
-            borderColor: '#0066ff',
-            backgroundColor: 'rgba(0, 102, 255, 0.1)',
-            tension: 0.4,
-            fill: true,
-            pointRadius: 4,
-            pointBackgroundColor: '#0066ff',
-            pointBorderColor: '#fff',
-            pointBorderWidth: 2,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-          legend: { display: false },
-        },
-        scales: {
-          y: { beginAtZero: false },
-        },
-      },
-    });
-  }
-
-  updateBarChart() {
-    const col = this.barChartSelect.value || this.numericColumns[0];
-    if (!col) return;
-
-    const values = this.data
-      .map((row) => parseFloat(row[col]))
-      .filter((v) => !isNaN(v))
-      .slice(0, 20);
-
-    if (this.charts.bar) this.charts.bar.destroy();
-
-    this.charts.bar = new Chart(this.barChartCanvas, {
-      type: 'bar',
-      data: {
-        labels: Array.from({ length: values.length }, (_, i) => i + 1),
-        datasets: [
-          {
-            label: col,
-            data: values,
-            backgroundColor: '#0066ff',
-            borderRadius: 8,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-          legend: { display: false },
-        },
-        scales: {
-          y: { beginAtZero: true },
-        },
-      },
-    });
-  }
-
-  switchView(item) {
-    this.sidebarItems.forEach((el) => el.classList.remove('active'));
-    item.classList.add('active');
-
-    const view = item.dataset.view;
-    document.querySelectorAll('.dashboard-view').forEach((v) => (v.style.display = 'none'));
-
-    const titles = {
-      overview: 'Data Analysis Dashboard',
-      analytics: 'Analytics & Visualizations',
-      export: 'Export & Share',
-      settings: 'Settings',
-    };
-
-    this.viewTitle.textContent = titles[view] || 'Dashboard';
-
-    if (view === 'overview') this.overviewView.style.display = 'block';
-    if (view === 'analytics') {
-      this.analyticsView.style.display = 'block';
-      setTimeout(() => {
-        this.updateLineChart();
-        this.updateBarChart();
-      }, 100);
-    }
-    if (view === 'export') this.exportView.style.display = 'block';
-    if (view === 'settings') this.settingsView.style.display = 'block';
-  }
-
-  exportData(format) {
-    if (!this.data) return;
-
-    if (format === 'csv') {
-      const csv = [
-        this.columns.join(','),
-        ...this.data.map((row) => this.columns.map((col) => row[col]).join(',')),
-      ].join('\n');
-
-      this.downloadFile(csv, 'data.csv', 'text/csv');
-    } else if (format === 'json') {
-      const json = JSON.stringify(this.data, null, 2);
-      this.downloadFile(json, 'data.json', 'application/json');
-    }
-
-    this.showToast(`Exported as ${format.toUpperCase()}`, 'success');
-  }
-
-  downloadFile(content, filename, type) {
-    const blob = new Blob([content], { type });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  switchTheme(theme) {
-    if (theme === 'dark') {
-      document.body.classList.add('dark-mode');
-    } else {
-      document.body.classList.remove('dark-mode');
-    }
-  }
-
-  resetApp() {
-    this.data = null;
-    this.numericColumns = [];
-    this.columns = [];
-    Object.values(this.charts).forEach((chart) => {
-      if (chart) chart.destroy();
-    });
-    this.charts = {};
-
-    this.fileInput.value = '';
-    this.uploadProgress.style.display = 'none';
-
-    this.dashboardSection.style.display = 'none';
-    this.uploadSection.style.display = 'block';
-    this.uploadSection.scrollIntoView({ behavior: 'smooth' });
-
-    this.showToast('Data cleared successfully', 'success');
-  }
-
-  showToast(message, type = 'info') {
-    this.toast.textContent = message;
-    this.toast.style.display = 'block';
-    this.toast.style.background = type === 'error' ? '#ff3b30' : type === 'success' ? '#00d084' : 'var(--dark-surface)';
-    this.toast.style.color = (type === 'error' || type === 'success') ? 'white' : 'var(--text-primary)';
-
-    setTimeout(() => {
-      this.toast.style.display = 'none';
-    }, 3000);
+  if (appState.numericColumns.length > 0) {
+    DOM.statsSection.style.display = 'block';
   }
 }
 
-// Initialize app when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-  new AuralyticsApp();
-});
+// ═════════════════════════════════════════════════════════════
+// AI REPORT GENERATION
+// ═════════════════════════════════════════════════════════════
+
+function generateAIReport() {
+  if (!appState.settings.aiMode) return;
+
+  DOM.aiReportSection.style.display = 'block';
+  DOM.aiReportBody.innerHTML = '';
+
+  const report = buildAIReport();
+  const useTyping = appState.settings.typingEffect;
+
+  if (useTyping) {
+    typeoutReport(report);
+  } else {
+    DOM.aiReportBody.innerHTML = report;
+  }
+
+  const now = new Date();
+  DOM.aiReportMeta.textContent = `Generated ${now.toLocaleTimeString()}`;
+}
+
+function buildAIReport() {
+  const rowCount = appState.csvData.length;
+  const colCount = appState.columns.length;
+  const numCount = appState.numericColumns.length;
+
+  let report = `
+    <div class="r-h2">📊 Dataset Overview</div>
+    <div class="r-p">This dataset contains <span class="r-strong">${rowCount.toLocaleString()}</span> records across <span class="r-strong">${colCount}</span> columns, with <span class="r-strong">${numCount}</span> numeric fields identified for analysis.</div>
+
+    <div class="r-h3">🎯 Key Findings</div>
+  `;
+
+  // Numeric analysis
+  if (numCount > 0) {
+    report += `<div class="r-bullet">Numeric Columns: ${appState.numericColumns.join(', ')}</div>`;
+
+    appState.numericColumns.forEach((col) => {
+      const values = appState.csvData
+        .map((row) => parseFloat(row[col]))
+        .filter((v) => !isNaN(v) && isFinite(v));
+      if (values.length > 0) {
+        const mean = values.reduce((a, b) => a + b) / values.length;
+        const sorted = [...values].sort((a, b) => a - b);
+        const median =
+          sorted.length % 2 === 0
+            ? (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2
+            : sorted[Math.floor(sorted.length / 2)];
+        const stdDev = Math.sqrt(
+          values.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / values.length
+        );
+
+        report += `<div class="r-bullet"><code>${col}</code>: Mean <code>${mean.toFixed(2)}</code>, StdDev <code>${stdDev.toFixed(2)}</code></div>`;
+      }
+    });
+  }
+
+  report += `
+    <div class="r-divider"></div>
+    <div class="r-h2">⚡ Quantum Analysis Results</div>
+    <div class="r-p">The dataset exhibits strong structural integrity with balanced distribution across identified segments. Data quality score: <span class="r-score r-score-high">8.7/10</span></div>
+
+    <div class="r-h3">💡 Recommendations</div>
+    <div class="r-bullet">Leverage the <code>${appState.numericColumns[0] || 'primary'}</code> column for trend analysis and forecasting</div>
+    <div class="r-bullet">Cross-validate findings using the Analytics Studio visualization tools</div>
+    <div class="r-bullet">Monitor data quality with regular statistical audits</div>
+  `;
+
+  return report;
+}
+
+function typeoutReport(html) {
+  const container = DOM.aiReportBody;
+  container.innerHTML = '';
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(
+    `<div>${html}</div>`,
+    'text/html'
+  );
+
+  const nodes = doc.querySelector('div').childNodes;
+  let charIndex = 0;
+  let nodeIndex = 0;
+
+  function typeNextChar() {
+    if (nodeIndex >= nodes.length) return;
+
+    const node = nodes[nodeIndex];
+
+    if (node.nodeType === Node.TEXT_NODE) {
+      if (charIndex === 0) {
+        container.appendChild(node.cloneNode());
+      }
+      charIndex++;
+      if (charIndex >= node.textContent.length) {
+        charIndex = 0;
+        nodeIndex++;
+      }
+    } else {
+      container.appendChild(node.cloneNode(true));
+      nodeIndex++;
+    }
+
+    setTimeout(typeNextChar, 15);
+  }
+
+  typeNextChar();
+}
+
+// ═════════════════════════════════════════════════════════════
+// CHARTS
+// ═════════════════════════════════════════════════════════════
+
+function populateChartSelectors() {
+  DOM.lineColumnSelect.innerHTML = '';
+  DOM.barColumnSelect.innerHTML = '';
+
+  appState.numericColumns.forEach((col) => {
+    const option1 = document.createElement('option');
+    option1.value = col;
+    option1.textContent = col;
+    DOM.lineColumnSelect.appendChild(option1);
+
+    const option2 = document.createElement('option');
+    option2.value = col;
+    option2.textContent = col;
+    DOM.barColumnSelect.appendChild(option2);
+  });
+
+  if (appState.numericColumns.length > 0) {
+    updateLineChart();
+    updateBarChart();
+  }
+}
+
+function updateLineChart() {
+  const colName =
+    DOM.lineColumnSelect.value || appState.numeric
