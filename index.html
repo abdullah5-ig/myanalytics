@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Data Analytics Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- FontAwesome Icons aur Chart.js Grid ke liye -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fa-solid fa-chart-pie"></i> <span>DataNexus</span>
+            </div>
+            <nav class="nav-links">
+                <a href="#" class="active"><i class="fa-solid fa-house"></i> Overview</a>
+                <a href="#"><i class="fa-solid fa-chart-line"></i> Analytics</a>
+                <a href="#"><i class="fa-solid fa-database"></i> Datasets</a>
+                <a href="#"><i class="fa-solid fa-gear"></i> Settings</a>
+            </nav>
+        </aside>
+
+        <!-- Main Dashboard Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <h2>Data Analysis Workspace</h2>
+                <div class="user-profile">
+                    <i class="fa-solid fa-bell"></i>
+                    <div class="avatar">AN</div>
+                </div>
+            </header>
+
+            <!-- KPI Metrics Cards -->
+            <section class="metrics-grid">
+                <div class="card">
+                    <div class="card-info">
+                        <h3>Total Records</h3>
+                        <p class="number">142,850</p>
+                    </div>
+                    <i class="fa-solid fa-server icon-blue"></i>
+                </div>
+                <div class="card">
+                    <div class="card-info">
+                        <h3>Accuracy Rate</h3>
+                        <p class="number">98.4%</p>
+                    </div>
+                    <i class="fa-solid fa-bullseye icon-green"></i>
+                </div>
+                <div class="card">
+                    <div class="card-info">
+                        <h3>Processing Time</h3>
+                        <p class="number">120ms</p>
+                    </div>
+                    <i class="fa-solid fa-bolt icon-orange"></i>
+                </div>
+            </section>
+
+            <!-- Interactive Analytics Charts Section -->
+            <section class="charts-section">
+                <div class="chart-container">
+                    <h3>Regression & Sales Trend Analysis</h3>
+                    <canvas id="lineChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>Categorical Distribution</h3>
+                    <canvas id="barChart"></canvas>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
