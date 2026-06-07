@@ -862,93 +862,33 @@ function chartBaseOptions(animate = true) {
     animation: animate ? { duration: 800, easing: 'easeOutCubic' } : false,
     interaction: { intersect: false, mode: 'index' },
     plugins: {
-      legend: {
-        display: true,
-        labels: {
-          color: '#8899b8',
-          font: { family: "'DM Mono', monospace", size: 11 },
-          boxWidth: 12,
-          padding: 16
-        }
-      },
+      legend: { display: false }, // Clean macOS look
       tooltip: {
-        backgroundColor: 'rgba(13, 18, 32, 0.95)',
-        borderColor: 'rgba(255,255,255,0.08)',
+        backgroundColor: 'rgba(30, 30, 30, 0.85)',
+        backdropFilter: 'blur(10px)',
+        borderColor: 'rgba(255,255,255,0.1)',
         borderWidth: 1,
-        titleColor: '#f0f4ff',
-        bodyColor: '#8899b8',
+        titleColor: '#ffffff',
+        bodyColor: 'rgba(235, 235, 245, 0.8)',
         padding: 12,
-        cornerRadius: 10,
-        titleFont: { family: "'Syne', sans-serif", size: 13, weight: '600' },
-        bodyFont: { family: "'DM Mono', monospace", size: 12 }
+        cornerRadius: 12,
+        titleFont: { family: '-apple-system', size: 13, weight: '600' },
+        bodyFont: { family: '-apple-system', size: 12 }
       }
     },
     scales: {
       x: {
-        grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false },
-        ticks: {
-          color: '#4a5878',
-          font: { family: "'DM Mono', monospace", size: 10 },
-          maxTicksLimit: 10,
-          maxRotation: 0
-        },
+        grid: { display: false },
+        ticks: { color: 'rgba(235, 235, 245, 0.5)', font: { family: '-apple-system', size: 11 } },
         border: { display: false }
       },
       y: {
-        grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false },
-        ticks: {
-          color: '#4a5878',
-          font: { family: "'DM Mono', monospace", size: 10 },
-          callback: v => formatNum(v)
-        },
+        grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+        ticks: { color: 'rgba(235, 235, 245, 0.5)', font: { family: '-apple-system', size: 11 }, callback: v => formatNum(v) },
         border: { display: false }
       }
     }
   };
-}
-
-/* ════════════════════════════════════════════════════════════
-   CHART MODE TOGGLE
-══════════════════════════════════════════════════════════ */
-function initChartModeToggle() {
-  const toggle = $('chartModeToggle');
-  if (!toggle) return;
-
-  toggle.addEventListener('click', e => {
-    const btn = e.target.closest('.toggle-btn');
-    if (!btn) return;
-
-    toggle.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-
-    const mode = btn.dataset.mode;
-    const linePanel = $('lineChartPanel');
-    const barPanel = $('barChartPanel');
-    const workspace = $('chartsWorkspace');
-
-    if (!linePanel || !barPanel || !workspace) return;
-
-    if (mode === 'both') {
-      linePanel.style.display = '';
-      barPanel.style.display = '';
-      workspace.classList.remove('single');
-      workspace.style.gridTemplateColumns = '1fr 1fr';
-    } else if (mode === 'line') {
-      linePanel.style.display = '';
-      barPanel.style.display = 'none';
-      workspace.style.gridTemplateColumns = '1fr';
-    } else if (mode === 'bar') {
-      linePanel.style.display = 'none';
-      barPanel.style.display = '';
-      workspace.style.gridTemplateColumns = '1fr';
-    }
-
-    // Resize charts after layout change
-    setTimeout(() => {
-      if (AppState.charts.line) AppState.charts.line.resize();
-      if (AppState.charts.bar) AppState.charts.bar.resize();
-    }, 50);
-  });
 }
 
 /* ════════════════════════════════════════════════════════════
